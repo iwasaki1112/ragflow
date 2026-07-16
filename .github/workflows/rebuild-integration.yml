@@ -1,0 +1,57 @@
+name: Rebuild local-integration-test branch
+
+on:
+  workflow_run:
+    workflows: ["Sync fork main with upstream"]
+    types: [completed]
+  push:
+    branches:
+      - "fix/**"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  rebuild:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main with full history
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Rebuild local-integration-test from main + all open PR branches
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          git config user.name "ragflow-integration-bot"
+          git config user.email "actions@users.noreply.github.com"
+
+          # main を最新化した状態から統合ブランチを作り直す
+          git checkout -B local-integration-test main
+
+          # 現在openな自分のPR一覧を番号昇順で取得
+          # (本家にマージ済みのPRはここに出てこなくなるため、自然に統合対象から外れる)
+          BRANCHES=$(gh pr list --repo infiniflow/ragflow --author iwasaki1112 --state open \
+            --json number,headRefName --jq 'sort_by(.number) | .[].headRefName')
+
+          if [ -z "$BRANCHES" ]; then
+            echo "No open PR branches to merge; local-integration-test == main"
+          fi
+
+          for branch in $BRANCHES; do
+            echo "::group::Merging $branch"
+            git fetch origin "refs/heads/${branch}:refs/remotes/origin/${branch}"
+            if ! git merge --no-ff "origin/${branch}" -m "Merge ${branch} for integration testing"; then
+              echo "::error::Conflict merging ${branch} into local-integration-test. Aborting without pushing a broken branch." >&2
+              git merge --abort || true
+              exit 1
+            fi
+            echo "::endgroup::"
+          done
+
+          git push --force-with-lease origin local-integration-test
