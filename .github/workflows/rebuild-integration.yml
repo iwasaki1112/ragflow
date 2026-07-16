@@ -4,9 +4,6 @@ on:
   workflow_run:
     workflows: ["Sync fork main with upstream"]
     types: [completed]
-  push:
-    branches:
-      - "fix/**"
   workflow_dispatch: {}
 
 permissions:
