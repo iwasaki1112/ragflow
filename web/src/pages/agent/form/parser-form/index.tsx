@@ -296,12 +296,10 @@ function ParserItem({
         )}
       </RAGFlowFormItem>
       <Widget prefix={prefix} fileType={fileFormat as FileType}></Widget>
-      <div className="hidden">
-        <OutputFormatFormField
-          prefix={prefix}
-          fileType={fileFormat as FileType}
-        />
-      </div>
+      <OutputFormatFormField
+        prefix={prefix}
+        fileType={fileFormat as FileType}
+      />
       {/* <RAGFlowFormItem
         name={buildFieldNameWithPrefix(`preprocess`, prefix)}
         label={t('flow.preprocess.preprocess')}
