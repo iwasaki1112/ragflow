@@ -24,6 +24,7 @@ export enum PdfOutputFormat {
 
 export enum SpreadsheetOutputFormat {
   Json = 'json',
+  Markdown = 'markdown',
   Html = 'html',
 }
 
