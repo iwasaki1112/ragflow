@@ -47,6 +47,13 @@ class QueryBase(ABC):
                 r"(^| )('s|'re|is|are|were|was|do|does|did|don't|doesn't|didn't|has|have|be|there|you|me|your|my|mine|just|please|may|i|should|would|wouldn't|will|won't|done|go|for|with|so|the|a|an|by|i'm|it's|he's|she's|they|they're|you're|as|by|on|in|at|up|out|down|of|to|or|and|if) ",
                 " ",
             ),
+            # Japanese: strip trailing polite/question endings and case/topic particles.
+            # Without this, a trailing particle (e.g. "...は", "...ですか") survives as its
+            # own token and can fail the fulltext minimum_should_match filter even when the
+            # vector/semantic match is strong, causing an otherwise-relevant query to return
+            # zero hits.
+            (r"(でしょうか|ですか|ますか|なのか|のか|かな|か)\s*$", ""),
+            (r"[のはがをにでともへやよねさ]+\s*$", ""),
         ]
         otxt = txt
         for r, p in patts:
